@@ -1,0 +1,38 @@
+<html lang="en" dir="ltr">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration or Sign Up form in HTML CSS | CodingLab</title>
+    <link rel="stylesheet" href="{% static 'users/main.css' %}">
+</head>
+
+<body>
+    <div class="wrapper">
+        <h2>Appointment Registration</h2>
+        <form method="post">
+        {% csrf_token %}
+        <div class="input-box">
+            <label for="required_speciality">Required speciality:</label>
+            <input type="text" id="required_speciality" name="required_speciality" required><br><br>
+        </div>
+        <br>
+        <div class="input-box">
+        <label for="start_time_of_apointment">Start time of appointment:</label>
+        <input type="time" id="start_time_of_apointment" name="start_time_of_apointment" required><br><br>
+        </div>
+        <br>
+        <div class="input-box">
+            <label for="date_of_appointment">Date of appointment:</label>
+            <input type="date" id="date_of_appointment" name="date_of_appointment" required><br><br>
+        </div>
+        <br>
+        <div class="input-box button">
+            <input type="submit" value="Register">
+        </div>
+    </form>
+    </div>
+</body>
+
+</html>
