@@ -11,21 +11,15 @@ def create_google_calendar(sender, instance, created, **kwargs):
         calendar = GoogleCalendar(user=instance)
         # Set the credentials attribute of the GoogleCalendar object
         # to the user's OAuth2 credentials
-        calendar.credentials = {
-            'access_token': 'ACCESS_TOKEN',
-            'token_type': 'Bearer',
-            'expires_in': 3600,
-            'refresh_token': 'REFRESH_TOKEN',
-            'scope': 'https://www.googleapis.com/auth/calendar',
-            "web": {
-                "client_id": "343290879929-n57ds4ouevp7ulfvp13ln8ataa9d0hem.apps.googleusercontent.com",
-                "project_id": "boxwood-plating-389007",
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "client_secret": "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"
-            }
-        }
+        calendar.credentials = {"web":{
+                                    "client_id":"343290879929-totp9hc0o3sn202q4ju7kejksqg9cji9.apps.googleusercontent.com",
+                                    "project_id":"boxwood-plating-389007","auth_uri":"https://accounts.google.com/o/oauth2/auth",
+                                    "token_uri":"https://oauth2.googleapis.com/token",
+                                    "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
+                                    "client_secret":"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",
+                                    "redirect_uris":["http://localhost:7000/authenticate"]
+                                    }
+                                }
         # Set the calendar_id attribute of the GoogleCalendar object
         # to the user's primary calendar ID
         calendar.calendar_id = 'PRIMARY_CALENDAR_ID'

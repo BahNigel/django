@@ -71,6 +71,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'health.wsgi.application'
 
+GOOGLE_CLIENT_ID = '343290879929-cmb4pqb9040ah520en1otssq4l3394ds.apps.googleusercontent.com'
+GOOGLE_CLIENT_SECRET = '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'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

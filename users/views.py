@@ -14,6 +14,20 @@ from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from .models import GoogleCalendar,Event,UserProfile, Blog
 
+from django.shortcuts import render
+from django.http import HttpResponse
+from users.google_calendar import get_events, create_event
+from datetime import datetime, time, timedelta
+
+from django.shortcuts import render
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse
+from google.oauth2.credentials import Credentials
+from googleapiclient.errors import HttpError
+from googleapiclient.discovery import build
+from google_auth_oauthlib import flow
+import datetime
+import pytz
 
 def register(request):
     if request.method == 'POST':
@@ -162,3 +176,110 @@ def appointmentDetails(request):
             posts = Blog.objects.filter(category=category).all()
 
         return render(request, 'event/success.html',{'user':user_profile, 'posts':posts, 'times':times, 'users':users, 'appointments': appointments})
+
+
+
+def home(request):
+    events = get_events()
+    context = {'events': events}
+    return render(request, 'home.html', context)
+
+def create(request):
+    if request.method == 'POST':
+        summary = request.POST.get('summary')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        timezone = request.POST.get('timezone')
+
+        if not start_time or not end_time:
+            return HttpResponse('Please enter start and end times.')
+
+        start_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M')
+        end_time = datetime.strptime(end_time, '%Y-%m-%dT%H:%M')
+
+        create_event(summary, start_time.isoformat(), end_time.isoformat(), timezone)
+
+        return HttpResponse('Event created successfully.')
+
+    return render(request, 'create.html')
+
+
+# Set up the Google Calendar API client
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+SERVICE_ACCOUNT_FILE = 'client_secret.json'
+calendar_service = build('calendar', 'v3', credentials=Credentials.from_authorized_user_file('token.json', SCOPES))
+
+def home_view(request):
+    # Get the user's events for the next week
+    now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    week_later = (datetime.datetime.utcnow() + datetime.timedelta(weeks=1)).isoformat() + 'Z'
+    events_result = calendar_service.events().list(calendarId='primary', timeMin=now, timeMax=week_later, singleEvents=True, orderBy='startTime').execute()
+    events = events_result.get('items', [])
+    if not events:
+        message = 'No upcoming events found.'
+    else:
+        message = 'Upcoming events:'
+        for event in events:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            start_time = datetime.datetime.fromisoformat(start).astimezone(pytz.utc).strftime('%Y-%m-%d %H:%M:%S %Z')
+            message += f'\n{start_time} - {event["summary"]}'
+    return render(request, 'home.html', {'message': message})
+
+def create_event_view(request):
+    if request.method == 'POST':
+        # Get the event details from the form
+        summary = request.POST['summary']
+        start_time = request.POST['start_time']
+        end_time = request.POST['end_time']
+
+        # Create an event object
+        event = {
+            'summary': summary,
+            'start': {
+                'dateTime': start_time,
+                'timeZone': 'UTC',
+            },
+            'end': {
+                'dateTime': end_time,
+                'timeZone': 'UTC',
+            },
+        }
+
+        # Add the event to the user's calendar
+        try:
+            calendar_service.events().insert(calendarId='primary', body=event).execute()
+            message = 'Event created successfully.'
+        except HttpError as error:
+            message = f'An error occurred: {error}'
+        return render(request, 'create.html', {'message': message})
+    else:
+        return render(request, 'create.html')
+
+def authenticate_view(request):
+    # Set up the Google Calendar API credentials flow
+    flows = flow.Flow.from_client_secrets_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    flows.redirect_uri = 'http://localhost:7000/authenticate'
+
+    # Generate the authorization URL and redirect the user to Google sign-in
+    authorization_url, state = flows.authorization_url(
+        access_type='offline', include_granted_scopes='true')
+    request.session['state'] = state
+    return HttpResponseRedirect(authorization_url)
+
+def callback_view(request):
+    # Exchange the authorization code for access and refresh tokens
+    state = request.session['state']
+    flows = flow.Flow.from_client_secrets_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES, state=state)
+    flows.redirect_uri = 'http://localhost:7000/authenticate'
+    authorization_response = request.build_absolute_uri()
+    flows.fetch_token(authorization_response=authorization_response)
+
+    # Save the access and refresh tokens to a file
+    credentials = flows.credentials
+    with open('token.json', 'w') as token:
+        token.write(credentials.to_json())
+
+    # Redirect the user back to the home page
+    return HttpResponseRedirect(reverse('home'))

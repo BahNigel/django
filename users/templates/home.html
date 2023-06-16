@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Calendar</title>
+</head>
+<body>
+    <h1>Upcoming Events</h1>
+
+    {% if events %}
+        <ul>
+            {% for event in events %}
+                <li>{{ event.summary }} - {{ event.start.dateTime }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No upcoming events.</p>
+    {% endif %}
+
+    <a href="{% url 'create' %}">Create Event</a>
+</body>
+</html>
